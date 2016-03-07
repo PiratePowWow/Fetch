@@ -71,6 +71,26 @@ public class Main {
         }
         return userOpenRequests;
     }
+    public static ArrayList<Request> selectUserCompletedRequests(Connection conn, int userId) throws SQLException {
+        PreparedStatement stmt = conn.prepareStatement("SELECT users.name, requests.id, requests.request, requests.status FROM requests INNER JOIN users ON requests.user_id=users.id WHERE requests.status = 'COMPLETE' AND requests.user_id = ?");
+        stmt.setInt(1, userId);
+        ResultSet results = stmt.executeQuery();
+        ArrayList<Request> userCompletedRequests = new ArrayList<>();
+        while(results.next()){
+            userCompletedRequests.add(new Request(results.getString("users.name"), results.getInt("requests.id"), results.getString("requests.request"), results.getString("requests.status")));
+        }
+        return userCompletedRequests;
+    }
+    public static ArrayList<Request> selectDriverCompletedRequests(Connection conn, int driverId) throws SQLException {
+        PreparedStatement stmt = conn.prepareStatement("SELECT requests.id, requests.request, requests.status, users.name FROM requests INNER JOIN users ON requests.user_id=users.id WHERE requests.status = ?");
+        stmt.setInt(1, driverId);
+        ResultSet results = stmt.executeQuery();
+        ArrayList<Request> openRequests = new ArrayList<>();
+        while(results.next()){
+            openRequests.add(new Request(results.getString("users.name"), results.getInt("requests.id"), results.getString("requests.request"), results.getString("requests.status")));
+        }
+        return openRequests;
+    }
     public static ArrayList<Request> selectDriverRequests(Connection conn, int driverId) throws SQLException {
         PreparedStatement stmt = conn.prepareStatement("SELECT requests.id, requests.request, requests.status, users.name FROM requests INNER JOIN drivers ON requests.driver_id=drivers.id INNER JOIN users ON requests.user_id=users.id WHERE drivers.id = ?");
         stmt.setInt(1, driverId);
@@ -359,6 +379,15 @@ public class Main {
                 })
         );
         Spark.get(
+                "/user-completed-requests",
+                ((request, response) -> {
+                    User user = getUserFromSession(request.session());
+                    userLoginCheck(user);
+                    JsonSerializer s = new JsonSerializer();
+                    return s.serialize(selectUserCompletedRequests(conn, user.getId()));
+                })
+        );
+        Spark.get(
                 "/driver-requests",
                 ((request, response) -> {
                     Driver driver = getDriverFromSession(request.session());
@@ -374,6 +403,15 @@ public class Main {
                     driverLoginCheck(driver);
                     JsonSerializer s = new JsonSerializer();
                     return s.serialize(selectOpenRequests(conn, "OPEN"));
+                })
+        );
+        Spark.get(
+                "/driver-completed-requests",
+                ((request, response) -> {
+                    Driver driver = getDriverFromSession(request.session());
+                    driverLoginCheck(driver);
+                    JsonSerializer s = new JsonSerializer();
+                    return s.serialize(selectDriverCompletedRequests(conn, driver.getId()));
                 })
         );
         Spark.post(
