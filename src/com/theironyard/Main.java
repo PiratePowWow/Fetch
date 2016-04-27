@@ -194,12 +194,12 @@ public class Main {
     }
     final static Logger logger = LoggerFactory.getLogger(Main.class);
     public static void main(String[] args) throws SQLException, FileNotFoundException {
-        Connection conn = DriverManager.getConnection("jdbc:h2:mem:fetch");
+        Connection conn = DriverManager.getConnection("jdbc:h2:mem:liarsDice");
         createTables(conn);
         Spark.externalStaticFileLocation("public");
         Spark.init();
         Spark.awaitInitialization();
-        Server.createWebServer().start();
+//        Server.createWebServer().start();
         insertUser(conn, "Bob");
         insertDriver(conn, "Tom");
         insertRequest(conn, 1, "This is a request");
